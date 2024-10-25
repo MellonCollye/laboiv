@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Db ABM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: consolas;
+        }
+
+        html {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            padding-top: 1vh;
+            background-color: #191919;
+            color: white;
+            text-align: center;
+            height: 10%;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 0;
+            background-color: #191919;
+            color: white;
+            width: 100%;
+            height: 10%;
+            text-align: center;
+        }
+
+        .container {
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            height: min-content;
+            position: relative;
+        }
+
+        thead {
+            position: relative;
+            height: 10%;
+        }
+
+        thead>tr>th {
+            cursor: pointer;
+            width: 16%;
+        }
+
+        .control {
+            width: 20%;
+        }
+
+        tfoot {
+            background-color: red;
+            height: 5%;
+        }
+
+        th>input {
+            height: 40px;
+            color: black;
+            width: 100%;
+        }
+
+        .displayer {
+            height: min-content;
+        }
+
+        table {
+            height: 100%;
+        }
+
+        td {
+            height: min-content;
+            border: 2px solid black;
+            text-align: start;
+        }
+
+        tbody>tr {
+            height: min-content;
+            block-size: 30px;
+        }
+
+        th {
+            position: sticky;
+            top: -1px;
+            background-color: red;
+            border: 2px solid black;
+        }
+
+        tbody :nth-child(odd) td {
+            background-color: gray;
+        }
+
+        .btnContainer {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        th>select {
+            width: 100%;
+            height: 100%;
+        }
+
+        .ordenarpor {
+            background-color: #191919;
+            display: flex;
+            color: white;
+            flex-direction: row;
+        }
+
+        .ordenarpor>input {
+            width: auto;
+            height: auto;
+        }
+
+        .ventanaModal {
+            background-color: red;
+            width: 50%;
+            min-width: 500px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px;
+            border: 2px solid #191919;
+            display: none;
+            flex-direction: column;
+        }
+
+        .ventanaModal form div>input {
+            margin-top: 7px;
+
+        }
+
+        .ventanaModal input,
+        .ventanaModal select {
+            border: 2px solid #191919;
+            width: 100%;
+            height: 40px;
+        }
+
+        .ventanaModal>.btn {
+            display: flex;
+            justify-content: end;
+        }
+
+        .eliminarModal {
+            position: absolute;
+            background-color: red;
+            border: 2px solid #191919;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .eliminarModal>div {
+            display: flex;
+            justify-content: space-around;
+            margin: 5px;
+        }
+
+        .eliminarModal>div>button {
+            width: 100px;
+        }
+
+        .pdfModal {
+            border: 4px solid #191919;
+            width: 50%;
+            max-width: 500px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            display: none;
+            flex-direction: column;
+        }
+
+        .pdfModal>form {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px;
+            border: 2px solid red;
+            width: 100%;
+        }
+
+        .pdfModal>input {
+            background-color: white;
+        }
+
+        .cuadroContainer {
+            height: 400px;
+            border: 2px solid red;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Manejo de Sesion</h1>
+        <button id="cargar">Cargar Datos</button>
+        <button id="limpiar">Vaciar Datos</button>
+        <button id="altaBtn">Agregar Registro</button>
+        <button onclick="{window.location.href = '../destroySession.php'}">cerrarSesion</button>
+    </header>
+    <div class="ordenarpor">
+        <p>Ordenar por :</p>
+        <input readonly>
+        <button>Reestablecer</button>
+    </div>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th class="headcell">Id</th>
+                    <th class="headcell">Nombre</th>
+                    <th class="headcell">Estilo</th>
+                    <th class="headcell">Epoca</th>
+                    <th class="headcell">Salario</th>
+                    <th class="headcell control">Controles</th>
+                </tr>
+                <tr>
+                    <th><input type="text" name="filterId" id="filterId" placeholder="Buscar Id"></th>
+                    <th><input type="text" name="filterNombre" id="filterNombre" placeholder="Buscar Nombre"></th>
+                    <th><select name="filterEstilo" id="filterEstilo"></select></th>
+                    <th><input type="text" name="filterEpoca" id="filterEpoca" placeholder="Filtrar por epoca"></th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody class="displayer"></tbody>
+
+        </table>
+    </div>
+    <footer>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="footcell">Id</th>
+                        <th class="footcell">Nombre</th>
+                        <th class="footcell">Estilo</th>
+                        <th class="footcell">Epoca</th>
+                        <th class="footcell">Salario</th>
+                        <th class="footcell control">Controles</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </footer>
+    <div class="ventanaModal">
+        <div class="btn">
+            <button id="modalSalir">Salir</button>
+        </div>
+        <form id="formCreate">
+            <input type="text" name="id" id="inputId" hidden>
+            <label for="inputNombre">Nombre</label>
+            <input type="text" name="nombre" id="inputNombre" required>
+            <label for="inputEstilo">Estilo</label>
+            <select name="estilo" id="inputEstilo" required></select>
+            <label for="inputEpoca">Epoca</label>
+            <input type="text" name="epoca" id="inputEpoca" required>
+            <label for="inputSalario">Salario</label>
+            <input type="text" name="salario" id="inputSalario" required>
+            <div>
+                <input type="submit">
+                <input type="reset">
+            </div>
+        </form>
+    </div>
+    <div class="eliminarModal">
+        <h3>Esta seguro de querer eliminarlo?</h3>
+        <div>
+            <input type="text" id="eliminarId" hidden>
+            <button id="eliminarSi">Si</button>
+            <button id="eliminarNo">No</button>
+        </div>
+    </div>
+    <div class="pdfModal">
+        <iframe class="cuadroContainer"></iframe>
+        <form id="formPdf" enctype="multipart/form-data">
+            <input type="file" id="image" name="image" required>
+            <div style="display: flex;">
+                <input type="text" id="idPdf" name="idPdf" hidden>
+                <input type="submit" id="subirPdf" />
+                <button type="button" id="cerrarFormPdf" onclick="{cerrarFormpdf()}">Cerrar</button>
+            </div>
+        </form>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"
+        integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+    <script>
+
+        const cerrarFormpdf = () => {
+            $('.pdfModal').css({
+                'display': 'none'
+            })
+            var iframe = $('iframe');
+            iframe.attr('srcdoc', '');
+            $('#idPdf').val('')
+            $('#image').val('');
+        }
+
+        $('#image').change(function () {
+            var file = this.files[0];
+            var reader = new FileReader();
+
+            reader.readAsDataURL(file);
+
+            reader.onload = function (e) {
+                var imageDataUrl = e.target.result;
+                var iframe = $('iframe');
+                iframe.attr('srcdoc', '<img src="' + imageDataUrl + '" style="width:100%;height:100%;" alt="Imagen seleccionada">');
+            };
+        });
+
+        $('#formPdf').on('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            try {
+                const response = await $.ajax({
+                    type: 'POST',
+                    url: 'upload.php',
+                    data: formData,  
+                    contentType: false,  
+                    processData: false
+                });
+                $('.pdfModal').css({
+                'display': 'none'
+                })
+            } catch (error) {
+                console.error('Error en la solicitud:', error);
+            }
+        })
+
+        const cargarFormpdf = async (id) => {
+            try {
+                const response = await $.ajax({
+                    type: 'POST',
+                    url: 'openImg.php',
+                    data: { id }
+                });
+
+                if (response) {
+                    var iframe = $('iframe');
+                    iframe.attr('srcdoc', '<img src="data:image/jpeg;base64,' + response + '" style="width:100%;height:100%;" alt="Imagen seleccionada">');
+                } else {
+                    console.error('La respuesta está vacía o no contiene datos válidos.');
+                }
+            } catch (error) {
+                console.error('Error en la solicitud:', error);
+            }
+        }
+        const getData = () => {
+            let data = {
+                id: $('#filterId').val(),
+                nombre: $('#filterNombre').val(),
+                estilo: $('#filterEstilo').val(),
+                epoca: $('#filterEpoca').val(),
+                order: $('.ordenarpor input').val()
+            };
+            return data
+        }
+
+
+        //Hacer req con los parametros para ordenar y filtrar
+        const cargarDatos = async () => {
+            try {
+                const response = await $.ajax({
+                    type: 'GET',
+                    url: 'controlador.php/data',
+                    dataType: 'json',
+                    data: { ...getData() }
+                });
+                return response;
+            } catch (error) {
+                console.error('Error en la solicitud /data: ', error);
+            }
+        }
+        const cargarOptions = async () => {
+            try {
+                const res = await $.ajax({
+                    type: 'GET',
+                    url: 'controlador.php/options'
+                });
+                return res;
+            } catch (error) {
+                console.error('Error en la solicitud /options: ', error);
+            }
+        }
+
+        //Cargar Options del select del campo parametrizable
+        $(() => {
+            const cargarSelect = async () => {
+
+                const options = await cargarOptions()
+                const select1 = $('#filterEstilo')
+                select1.append($('<option>', {
+                    value: '',
+                    text: ''
+                }));
+
+                $.each(options, (index, item) => {
+                    select1.append($('<option>', {
+                        value: item.estilo,
+                        text: item.estilo
+                    }));
+                });
+
+                const select2 = $('#inputEstilo')
+                select2.append($('<option>', {
+                    value: '',
+                    text: ''
+                }));
+
+                $.each(options, (index, item) => {
+                    select2.append($('<option>', {
+                        value: item.estilo,
+                        text: item.estilo
+                    }));
+                });
+            }
+            cargarSelect()
+        })
+
+        const makeButtons = () => {
+
+            const buttons = $('<div>')
+            buttons.addClass('btnContainer')
+
+            const modBtn = $('<button>')
+            modBtn.addClass('modBtn')
+            modBtn.text('Mod')
+            buttons.append(modBtn)
+
+            const bajaBtn = $('<button>')
+            bajaBtn.addClass('bajaBtn')
+            bajaBtn.text('Eliminar')
+            buttons.append(bajaBtn)
+
+            const pdfBtn = $('<button>')
+            pdfBtn.addClass('pdfBtn')
+            pdfBtn.text('Pdf')
+            buttons.append(pdfBtn)
+
+            return buttons
+        }
+
+        //Boton para cargar tabla
+        $(document).ready(async () => {
+            $('#cargar').on('click', async () => {
+                const tbody = $('.displayer')
+                tbody.html('<p>Esperando Respuesta...<p>')
+                const datos = await cargarDatos()
+                tbody.html('')
+                datos.map((item) => {
+                    const tr = $('<tr>');
+                    ['id', 'nombre', 'estilo', 'epoca', 'salario'].map(key => {
+                        const td = $('<td>').text(item[key])
+                        tr.append(td)
+                    });
+                    const buttons = $('<td>').append(makeButtons())
+                    tr.append(buttons)
+                    tbody.append(tr)
+                })
+
+            })
+        })
+
+
+
+        //Boton para limpiar tabla
+        $('#limpiar').on('click', () => {
+            $('tbody').empty()
+        })
+        //Cargar tipo de orden en input
+        $(() => {
+            $('.headcell , .footcell').on('click', function () {
+                var order = $(this).text();
+                $('.ordenarpor input').each(function () {
+                    $(this).val(order);
+                });
+            });
+        });
+        //Limpiar input
+        $('.ordenarpor > button').on('click', () => {
+            $('.ordenarpor input').val('');
+        })
+        //Botones modales
+        $('#modalSalir').on('click', (e) => {
+            $('.ventanaModal').css({
+                'display': 'none'
+            })
+            reestablecerFormModal()
+        })
+
+        $('#eliminarSi').on('click', async () => {
+            $('.eliminarModal').css({
+                'display': 'none'
+            });
+            const data = {
+                id: $('#eliminarId').val()
+            }
+            await sendReqDelete(data)
+            cargar()
+        })
+        $('#eliminarNo').on('click', () => {
+            $('.eliminarModal').css({
+                'display': 'none'
+            });
+            $('#eliminarId').val('')
+        })
+        $('#altaBtn').on('click', () => {
+            $('.ventanaModal').css({
+                'display': 'flex'
+            })
+        })
+
+        const cargar = async () => {
+            const tbody = $('.displayer')
+            tbody.html('<p>Esperando Respuesta...<p>')
+            const datos = await cargarDatos()
+            tbody.html('')
+            datos.map((item) => {
+                const tr = $('<tr>');
+
+                ['id', 'nombre', 'estilo', 'epoca', 'salario'].map(key => {
+                    const td = $('<td>').text(item[key])
+                    tr.append(td)
+                });
+                const buttons = $('<td>').append(makeButtons())
+                tr.append(buttons)
+                tbody.append(tr)
+            })
+            bindButtons()
+        }
+        cargar()
+        const arrayficarDatos = (btn) => {
+            const datos = []
+            const row = $(btn).parent().parent().parent();
+            row.children().each(function () {
+                datos.push($(this).text())
+            });
+            datos.pop()
+            return datos
+        }
+
+        const bindButtons = () => {
+            $('.modBtn').on('click', function () {
+                datos = arrayficarDatos($(this))
+                $('.ventanaModal').css({
+                    'display': 'flex'
+                });
+                cargarFormModal(datos)
+            })
+
+            $('.bajaBtn').on('click', function () {
+                datos = arrayficarDatos($(this))
+                $('#eliminarId').val(datos[0])
+                $('.eliminarModal').css({
+                    'display': 'flex'
+                });
+            })
+
+            $('.pdfBtn').on('click', function () {
+                $('.pdfModal').css({
+                    'display': 'flex'
+                })
+                const datos = arrayficarDatos($(this))
+                $('#idPdf').val(datos[0]);
+                cargarFormpdf(datos[0]);
+            })
+        }
+
+        const cargarFormModal = (datos) => {
+            $('#inputId').val(datos[0])
+            $('#inputNombre').val(datos[1])
+            $('#inputEstilo').val(datos[2])
+            $('#inputEpoca').val(datos[3])
+            $('#inputSalario').val(datos[4])
+        }
+
+        const reestablecerFormModal = () => {
+            $('#inputId').val('')
+            $('#inputNombre').val('')
+            $('#inputEstilo').val('')
+            $('#inputEpoca').val('')
+            $('#inputSalario').val('')
+        }
+
+        $(() => {
+            $('#formCreate').on('submit', async function (e) {
+                e.preventDefault();
+                const data = getDataObject(e.target)
+                if (data.id) {
+                    await sendReqPatch(data)
+                    $('.ventanaModal').css({
+                        'display': 'none'
+                    })
+                    reestablecerFormModal()
+                    cargar()
+                    return
+                }
+                await sendReqPost(data)
+                $('.ventanaModal').css({
+                    'display': 'none'
+                })
+                reestablecerFormModal()
+                cargar()
+            })
+        })
+
+        const getDataObject = (target) => {
+            const formData = new FormData(target);
+            const data = {
+                id: formData.get('id'),
+                nombre: formData.get('nombre'),
+                estilo: formData.get('estilo'),
+                epoca: formData.get('epoca'),
+                salario: formData.get('salario'),
+            }
+            return data
+        }
+
+        const sendReqPatch = async (data) => {
+            try {
+                const response = await $.ajax({
+                    type: 'PATCH',
+                    url: 'controlador.php/data',
+                    dataType: 'json',
+                    data: { ...data }
+                });
+                return response;
+            } catch (error) {
+                console.error('Error en la solicitud /data: ', error);
+            }
+        }
+        const sendReqPost = async (data) => {
+            try {
+                const response = await $.ajax({
+                    type: 'POST',
+                    url: 'controlador.php/data',
+                    dataType: 'json',
+                    data: { ...data }
+                });
+                return response;
+            } catch (error) {
+                console.error('Error en la solicitud /data: ', error);
+            }
+        }
+        const sendReqDelete = async (data) => {
+            try {
+                const response = await $.ajax({
+                    type: 'POST',
+                    url: 'controlador.php/delete',
+                    dataType: 'json',
+                    data: { ...data }
+                });
+                return response;
+            } catch (error) {
+                console.error('Error en la solicitud /delete: ', error);
+            }
+        }
+
+    </script>
+
+</body>
+
+
+</html>
